@@ -14,13 +14,13 @@ resource "azurerm_storage_account" "sta" {
   shared_access_key_enabled        = var.shared_access_key_enabled
   public_network_access_enabled    = var.public_network_access_enabled
   default_to_oauth_authentication  = var.default_to_oauth_authentication
-  #is_hns_enabled = var.is_hns_enabled  
+  is_hns_enabled = var.is_hns_enabled  
   nfsv3_enabled = var.nfsv3_enabled
   dynamic "custom_domain" {
     for_each = var.custom_domain != null ? [var.custom_domain] : []
     content {
-      days    = lookup(custom_domain.value, "name", null)
-      enabled = lookup(custom_domain.value, "use_subdomain", false)
+      name    = lookup(custom_domain.value, "name", null)
+      use_subdomain = lookup(custom_domain.value, "use_subdomain", false)
     }
   }
   dynamic "identity" {
@@ -58,8 +58,7 @@ resource "azurerm_storage_account" "sta" {
       versioning_enabled = lookup(blob_properties.value, "versioning_enabled", null)
       change_feed_enabled = lookup(blob_properties.value, "change_feed_enabled", null)
       change_feed_retention_in_days = lookup(blob_properties.value, "change_feed_retention_in_days", null)
-      default_service_version = lookup(blob_properties.value, "default_service_version", null)
-      use_subdomain = lookup(blob_properties.value, "use_subdomain", null)
+      default_service_version = lookup(blob_properties.value, "default_service_version", null)      
       last_access_time_enabled = lookup(blob_properties.value, "last_access_time_enabled", null)
       dynamic "container_delete_retention_policy" {
         for_each = blob_properties.value.container_delete_retention_policy
@@ -72,7 +71,7 @@ resource "azurerm_storage_account" "sta" {
   dynamic "network_rules" {
     for_each = var.network_rules != null ? [var.network_rules] : []
     content { 
-      #default_action = lookup(network_rule_set.value, "default_action", "Allow")
+      default_action = lookup(network_rules.value, "default_action", "Allow")
       bypass = lookup(network_rules.value, "bypass", null)
       ip_rules = network_rules.value.ip_rules
       virtual_network_subnet_ids  = network_rules.value.virtual_network_subnet_ids
@@ -96,4 +95,11 @@ resource "azurerm_storage_account" "sta" {
       tags["create_date"]
     ]
   }
+}
+
+resource "azurerm_storage_container" "ctr" {
+  for_each                = var.containers != null ? var.containers : {}
+  storage_account_name    = azurerm_storage_account.sta.name
+  name                    = lookup(each.value, "name", null)
+  container_access_type   = lookup(each.value, "container_access_type", "private")  
 }

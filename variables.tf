@@ -10,7 +10,7 @@ variable "resource_group_name" {
   type = string
 }
 
-variable "account_kind " {
+variable "account_kind" {
   type    = string
   default = "StorageV2"
 }
@@ -28,7 +28,7 @@ variable "cross_tenant_replication_enabled" {
   default = true
 }
 
-variable "access_tier " {
+variable "access_tier" {
   type    = string
   default = "Hot"
 }
@@ -68,13 +68,10 @@ variable "default_to_oauth_authentication" {
   default = false
 }
 
-# check what is the default value
-/* 
 variable "is_hns_enabled" {
   type = bool
-  default = 
+  default = false
 }
-*/
 
 variable "nfsv3_enabled" {
   type    = bool
@@ -94,8 +91,7 @@ variable "customer_managed_key" {
 }
 */
 
-variable "identity" {
-  description = "Specifies the type of Managed Service Identity that should be configured on this Container Registry"
+variable "identity" {  
   type = object({
     type         = string
     identity_ids = optional(list(string))
@@ -148,13 +144,10 @@ variable "network_rules" {
   default = null
 }
 
-# check what is the default value
-/* 
 variable "large_file_share_enabled" {
   type = bool
-  default = 
+  default = null
 }
-*/
 
 /* will be added latter
 variable "azure_files_authentication" {  
@@ -165,6 +158,11 @@ variable "routing" {
 */
 variable "queue_encryption_key_type" {
   type    = string
+  default = "Service"
+}
+
+variable "table_encryption_key_type" {
+  type = string
   default = "Service"
 }
 
@@ -194,4 +192,13 @@ variable "sftp_enabled" {
 variable "tags" {
   type    = map(string)
   default = {}
+}
+
+variable "containers" {
+  description = "You can use this var to specify the list of containers to be created"
+  type = map(object({
+    name = string
+    container_access_type = string
+  }))
+  default = null
 }

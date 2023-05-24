@@ -14,12 +14,12 @@ resource "azurerm_storage_account" "sta" {
   shared_access_key_enabled        = var.shared_access_key_enabled
   public_network_access_enabled    = var.public_network_access_enabled
   default_to_oauth_authentication  = var.default_to_oauth_authentication
-  is_hns_enabled = var.is_hns_enabled  
-  nfsv3_enabled = var.nfsv3_enabled
+  is_hns_enabled                   = var.is_hns_enabled
+  nfsv3_enabled                    = var.nfsv3_enabled
   dynamic "custom_domain" {
     for_each = var.custom_domain != null ? [var.custom_domain] : []
     content {
-      name    = lookup(custom_domain.value, "name", null)
+      name          = lookup(custom_domain.value, "name", null)
       use_subdomain = lookup(custom_domain.value, "use_subdomain", false)
     }
   }
@@ -32,64 +32,71 @@ resource "azurerm_storage_account" "sta" {
   }
   dynamic "blob_properties" {
     for_each = var.blob_properties != null ? [var.blob_properties] : []
-    content { 
+    content {
       dynamic "cors_rule" {
         for_each = blob_properties.value.cors_rule
-        content {                    
-          allowed_headers = cors_rule.value.allowed_headers
-          allowed_methods = cors_rule.value.allowed_methods
-          allowed_origins = cors_rule.value.allowed_origins
-          exposed_headers = cors_rule.value.exposed_headers
+        content {
+          allowed_headers    = cors_rule.value.allowed_headers
+          allowed_methods    = cors_rule.value.allowed_methods
+          allowed_origins    = cors_rule.value.allowed_origins
+          exposed_headers    = cors_rule.value.exposed_headers
           max_age_in_seconds = cors_rule.value.max_age_in_seconds
         }
-      }
+      }      
       dynamic "delete_retention_policy" {
         for_each = blob_properties.value.delete_retention_policy
-        content {                    
+        content {
           days = delete_retention_policy.value.days
         }
       }
       dynamic "restore_policy" {
         for_each = blob_properties.value.restore_policy
-        content {                    
+        content {
           days = restore_policy.value.days
         }
       }
-      versioning_enabled = lookup(blob_properties.value, "versioning_enabled", null)
-      change_feed_enabled = lookup(blob_properties.value, "change_feed_enabled", null)
+      versioning_enabled            = lookup(blob_properties.value, "versioning_enabled", null)
+      change_feed_enabled           = lookup(blob_properties.value, "change_feed_enabled", null)
       change_feed_retention_in_days = lookup(blob_properties.value, "change_feed_retention_in_days", null)
-      default_service_version = lookup(blob_properties.value, "default_service_version", null)      
-      last_access_time_enabled = lookup(blob_properties.value, "last_access_time_enabled", null)
+      default_service_version       = lookup(blob_properties.value, "default_service_version", null)
+      last_access_time_enabled      = lookup(blob_properties.value, "last_access_time_enabled", null)
       dynamic "container_delete_retention_policy" {
         for_each = blob_properties.value.container_delete_retention_policy
-        content {                    
+        content {
           days = container_delete_retention_policy.value.days
         }
       }
-    }    
+    }
+  }
+  dynamic "static_website" {
+        for_each = var.static_website != null ? [var.static_website] : []
+        content {
+          index_document     = static_website.value.index_document
+          error_404_document = static_website.value.error_404_document
+        }
   }
   dynamic "network_rules" {
     for_each = var.network_rules != null ? [var.network_rules] : []
-    content { 
-      default_action = lookup(network_rules.value, "default_action", "Allow")
-      bypass = lookup(network_rules.value, "bypass", null)
-      ip_rules = network_rules.value.ip_rules
-      virtual_network_subnet_ids  = network_rules.value.virtual_network_subnet_ids
+    content {
+      default_action             = lookup(network_rules.value, "default_action", "Allow")
+      bypass                     = lookup(network_rules.value, "bypass", null)
+      ip_rules                   = network_rules.value.ip_rules
+      virtual_network_subnet_ids = network_rules.value.virtual_network_subnet_ids
       dynamic "private_link_access" {
         for_each = network_rules.value.private_link_access
         content {
           endpoint_resource_id = private_link_access.value.endpoint_resource_id
-          endpoint_tenant_id = private_link_access.value.endpoint_tenant_id
-        }        
+          endpoint_tenant_id   = private_link_access.value.endpoint_tenant_id
+        }
       }
-    }    
-  } 
+    }
+  }
   # large_file_share_enabled          = var.large_file_share_enabled
   queue_encryption_key_type         = var.queue_encryption_key_type
   infrastructure_encryption_enabled = var.infrastructure_encryption_enabled
   allowed_copy_scope                = var.allowed_copy_scope
   sftp_enabled                      = var.sftp_enabled
-  tags = local.tags
+  tags                              = local.tags
   lifecycle {
     ignore_changes = [
       tags["create_date"]
@@ -97,9 +104,32 @@ resource "azurerm_storage_account" "sta" {
   }
 }
 
+resource "azurerm_role_assignment" "static_web" {
+  depends_on = [ azurerm_storage_account.sta ]
+  for_each = {
+    for k, v in toset(var.azure_ad_groups) : k => v
+    if var.static_website != null
+  }
+  scope                = "${azurerm_storage_account.sta.id}/blobServices/default/containers/$web"
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = each.value
+}
+
 resource "azurerm_storage_container" "ctr" {
-  for_each                = var.containers != null ? var.containers : {}
-  storage_account_name    = azurerm_storage_account.sta.name
-  name                    = lookup(each.value, "name", null)
-  container_access_type   = lookup(each.value, "container_access_type", "private")  
+  depends_on = [ azurerm_storage_account.sta ]
+  for_each              = var.containers != null ? var.containers : {}
+  storage_account_name  = azurerm_storage_account.sta.name
+  name                  = lookup(each.value, "name", null)
+  container_access_type = lookup(each.value, "container_access_type", "private")
+}
+
+resource "azurerm_role_assignment" "ctr" {
+  depends_on = [ azurerm_storage_container.ctr ]
+  for_each = {
+    for k in toset(var.azure_ad_groups) : k => v
+    if var.containers != null
+  }
+  scope                = element([for k in azurerm_storage_container.ctr : k.id], 0)
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = each.value
 }

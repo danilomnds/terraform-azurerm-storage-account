@@ -50,7 +50,7 @@ variable "min_tls_version" {
 
 variable "allow_nested_items_to_be_public" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "shared_access_key_enabled" {
@@ -69,7 +69,7 @@ variable "default_to_oauth_authentication" {
 }
 
 variable "is_hns_enabled" {
-  type = bool
+  type    = bool
   default = false
 }
 
@@ -91,7 +91,7 @@ variable "customer_managed_key" {
 }
 */
 
-variable "identity" {  
+variable "identity" {
   type = object({
     type         = string
     identity_ids = optional(list(string))
@@ -102,21 +102,21 @@ variable "identity" {
 variable "blob_properties" {
   type = object({
     cors_rule = optional(object({
-      allowed_headers = list(string)
-      allowed_methods = list(string)
-      allowed_origins = list(string)
-      exposed_headers = list(string)
+      allowed_headers    = list(string)
+      allowed_methods    = list(string)
+      allowed_origins    = list(string)
+      exposed_headers    = list(string)
       max_age_in_seconds = number
     }))
-    delete_retention_policy = optional(object({ days = number }))
-    restore_policy = optional(object({ days = number }))
-    versioning_enabled = optional(bool)
-    change_feed_enabled = optional(bool)
-    change_feed_retention_in_days = optional(number)
-    default_service_version = optional(string)
-    use_subdomain = optional(bool)
-    last_access_time_enabled = optional(bool)
-    container_delete_retention_policy = optional(object({ days = number }))    
+    delete_retention_policy           = optional(object({ days = number }))
+    restore_policy                    = optional(object({ days = number }))
+    versioning_enabled                = optional(bool)
+    change_feed_enabled               = optional(bool)
+    change_feed_retention_in_days     = optional(number)
+    default_service_version           = optional(string)
+    use_subdomain                     = optional(bool)
+    last_access_time_enabled          = optional(bool)
+    container_delete_retention_policy = optional(object({ days = number }))
   })
   default = null
 }
@@ -124,10 +124,17 @@ variable "blob_properties" {
 /* will be added latter
 variable "queue_properties" {  
 }
+*/
 
-variable "static_website" {  
+variable "static_website" {
+  type = object({
+    index_document     = optional(string)
+    error_404_document = optional(string)
+  })
+  default = null
 }
 
+/*
 variable "share_properties" {  
 }
 */
@@ -145,7 +152,7 @@ variable "network_rules" {
 }
 
 variable "large_file_share_enabled" {
-  type = bool
+  type    = bool
   default = null
 }
 
@@ -162,7 +169,7 @@ variable "queue_encryption_key_type" {
 }
 
 variable "table_encryption_key_type" {
-  type = string
+  type    = string
   default = "Service"
 }
 
@@ -197,8 +204,13 @@ variable "tags" {
 variable "containers" {
   description = "You can use this var to specify the list of containers to be created"
   type = map(object({
-    name = string
+    name                  = string
     container_access_type = string
   }))
   default = null
+}
+
+variable "azure_ad_groups" {
+  type    = list(string)
+  default = []
 }

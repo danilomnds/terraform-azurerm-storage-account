@@ -9,7 +9,7 @@ Module developed to standardize the creation of Azure Storage Accounts.
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.3.8            | 3.45.0          |
+| v1.0.0         | v1.4.6            | 3.54.0          |
 
 ## Specifying a version
 
@@ -22,7 +22,7 @@ Note: The `?ref=***` refers a tag on the git module repo.
 
 ```hcl
 module "<storage-account-name>" {
-  source              = "git::https://github.com/danilomnds/terraform-azurerm-storage-account?ref=v1.0.0"
+  source                   = "git::https://github.com/danilomnds/terraform-azurerm-storage-account?ref=v1.0.0"
   name                     = <storage-account-name>
   location                 = <region>
   resource_group_name      = <resource-group-name>
@@ -64,7 +64,7 @@ output "id" {
 | edge_zone | specifies the edge zone within the azure region where this storage account should exist | `string` | `null` | No |
 | enable_https_traffic_only | boolean flag which forces HTTPS if enabled, see here for more information. | `bool` | `True` | No |
 | min_tls_version | the minimum supported TLS version for the storage account | `string` | `TLS1_2` | No |
-| allow_nested_items_to_be_public | Allow or disallow nested items within this account to opt into being public | `bool` | `True` | No |
+| allow_nested_items_to_be_public | Allow or disallow nested items within this account to opt into being public | `bool` | `false` | No |
 | shared_access_key_enabled | indicates whether the storage account permits requests to be authorized with the account access key via shared key | `bool` | `True` | No |
 | public_network_access_enabled | whether the public network access is enabled? | `bool` | `True` | No |
 | default_to_oauth_authentication | default to Azure Active Directory authorization in the Azure portal when accessing the storage account | `bool` | `False` | No |
@@ -74,7 +74,7 @@ output "id" {
 | identity | block for custom the configuration of managed identity  | `object({})` | `null` | No |
 | blob_properties | block for custom the configuration of the blobs | `object({})` | `null` | No |
 | queue_properties (`to be added`)| block for custom the configuration of queue properties | TBD | TBD | No |
-| static_website (`to be added`)| block for custom the configuration of queue static website | TBD | TBD | No |
+| static_website | block for custom the configuration of queue static website | `object({})` | `null` | No |
 | share_properties (`to be added`)| block for custom the configuration of queue share properties | TBD | TBD | No |
 | network_rules | block for custom the configuration of network rules | `object({})` | `null` | No |
 | large_file_share_enabled | Is Large File Share Enabled | `bool` | `null` | No |
@@ -88,7 +88,9 @@ output "id" {
 | allowed_copy_scope | Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet | `string` | `null` | No |
 | sftp_enabled | Boolean, enable SFTP for the storage account | `bool` | `False` | No |
 | tags | tags for the resource | `map(string)` | `{}` | No |
+| azure_ad_groups | list of azure AD groups that will be granted the Application Insights Component Contributor role  | `list` | `[]` | No |
 | containers | specifies the list of containers to be created in the storage account | `map(object{})` | `{}` | No |
+
 
 ## Objects and map variables list of acceptable parameters
 | Variable Name (Block) | Parameter | Description | Type | Default | Required |
@@ -110,6 +112,8 @@ output "id" {
 | blob_properties | default_service_version | The API Version which should be used by default for requests to the Data Plane API if an incoming request doesn't specify an API Version | `string` | `null` | No |
 | blob_properties | last_access_time_enabled | Is the last access time based tracking enabled? | `bool` | `false` | No |
 | blob_properties | container_delete_retention_policy (days) | Specifies the number of days that the container should be retained, between 1 and 365 days | `number` | `7` | No |
+| static_website | index_document | the webpage that azure storage serves for requests to the root of a website or any subfolder | `string` | `null` | No |
+| static_website | error_404_document | the absolute path to a custom webpage that should be used when a request is made which does not correspond to an existing file | `string` | `null` | No |
 | network_rules | default_action | Specifies the default action of allow or deny when no other rules match | `string` | `Allow` | No |
 | network_rules | bypass | Specifies whether traffic is bypassed for Logging/Metrics/AzureServicesh | `list(string)` | `[AzureServices]` | No |
 | network_rules | ip_rules |List of public IP or IP ranges in CIDR Format. Only IPv4 addresses are allowed | `list(string)` | `[]` | No |

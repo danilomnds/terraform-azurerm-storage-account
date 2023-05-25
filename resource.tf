@@ -124,12 +124,9 @@ resource "azurerm_storage_container" "ctr" {
 }
 
 resource "azurerm_role_assignment" "ctr" {
-  depends_on = [ azurerm_storage_container.ctr ]
-  for_each = {
-    for k in toset(var.azure_ad_groups) : k => v
-    if var.containers != null
-  }
-  scope                = element([for k in azurerm_storage_container.ctr : k.id], 0)
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = each.value
+    depends_on = [ azurerm_storage_container.ctr ]
+    for_each              = (var.containers != null && var.containers_rbac == true) ? var.containers : {}
+    scope = "${azurerm_storage_account.sta.id}/blobServices/default/containers/${lookup(each.value, "name", null)}"
+    role_definition_name = "Storage Blob Data Contributor"
+    principal_id         = lookup(each.value, "ad_group", null)
 }

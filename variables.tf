@@ -206,6 +206,7 @@ variable "containers" {
   type = map(object({
     name                  = string
     container_access_type = string
+    ad_group              = string
   }))
   default = null
 }
@@ -213,4 +214,9 @@ variable "containers" {
 variable "azure_ad_groups" {
   type    = list(string)
   default = []
+}
+
+variable "containers_rbac" {
+ type = bool
+ default = false
 }

@@ -9,7 +9,7 @@ Module developed to standardize the creation of Azure Storage Accounts.
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.4.6            | 3.54.0          |
+| v1.0.0         | v1.4.6            | 3.57.0          |
 
 ## Specifying a version
 
@@ -38,8 +38,10 @@ module "<storage-account-name>" {
     <container-name> = {
       name                  = "<container-name>",
       container_access_type = "<private>"
+      ad_group              = "<azure group ad>"
     }
-  }  
+  }
+  containers_rbac = true  
 }
 output "name" {
   value = module.storage-account-name.name
@@ -90,6 +92,7 @@ output "id" {
 | tags | tags for the resource | `map(string)` | `{}` | No |
 | azure_ad_groups | list of azure AD groups that will be granted the Application Insights Component Contributor role  | `list` | `[]` | No |
 | containers | specifies the list of containers to be created in the storage account | `map(object{})` | `{}` | No |
+| containers_rbac | specifies if the rbac should be applied for the container | `bool` | `false` | No |
 
 
 ## Objects and map variables list of acceptable parameters
@@ -122,6 +125,7 @@ output "id" {
 | network_rules | private_link_access (endpoint_tenant_id) | The tenant id of the resource of the resource access rule to be granted access | `string` | `null` | No |
 | containers | name | container name | `string` | `null` | No |
 | containers | container_access_type | blob, private etc | `string` | `null` | No |
+| containers | ad_group | azure group object id | `string` | `null` | No |
 
 ## Output variables
 

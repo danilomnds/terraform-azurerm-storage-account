@@ -86,10 +86,13 @@ variable "custom_domain" {
   default = null
 }
 
-/* will be added latter
-variable "customer_managed_key" {  
+variable "customer_managed_key" {
+  type = object({
+    key_vault_key_id          = string
+    user_assigned_identity_id = string
+  })
+  default = null
 }
-*/
 
 variable "identity" {
   type = object({
@@ -121,10 +124,37 @@ variable "blob_properties" {
   default = null
 }
 
-/* will be added latter
-variable "queue_properties" {  
+variable "queue_properties" {
+  type = object({
+    cors_rule = optional(object({
+      allowed_headers    = list(string)
+      allowed_methods    = list(string)
+      allowed_origins    = list(string)
+      exposed_headers    = list(string)
+      max_age_in_seconds = number
+    }))
+    logging = optional(object({
+      delete                = bool
+      read                  = bool
+      version               = string
+      write                 = bool
+      retention_policy_days = optional(number)
+    }))
+    minute_metrics = optional(object({
+      enabled               = bool
+      version               = string
+      include_apis          = optional(bool)
+      retention_policy_days = optional(number)
+    }))
+    hour_metrics = optional(object({
+      enabled               = bool
+      version               = string
+      include_apis          = optional(bool)
+      retention_policy_days = optional(number)
+    }))
+  })
+  default = null
 }
-*/
 
 variable "static_website" {
   type = object({
@@ -134,35 +164,69 @@ variable "static_website" {
   default = null
 }
 
-/*
-variable "share_properties" {  
+variable "share_properties" {
+  type = object({
+    cors_rule = optional(object({
+      allowed_headers    = list(string)
+      allowed_methods    = list(string)
+      allowed_origins    = list(string)
+      exposed_headers    = list(string)
+      max_age_in_seconds = number
+    }))
+    retention_policy = optional(object({
+      days = number
+    }))
+    smb = optional(object({
+      versions                        = optional(string)
+      authentication_types            = optional(string)
+      kerberos_ticket_encryption_type = optional(string)
+      channel_encryption_type         = optional(string)
+      multichannel_enabled            = optional(string)
+    }))
+  })
+  default = null
 }
-*/
 
 variable "network_rules" {
   type = object({
-    # check the default
-    # default_action = string
-    bypass              = list(string)
-    ip_rules            = list(string)
-    subnet_ids          = list(string)
-    private_link_access = optional(list(object({ endpoint_resource_id = string, endpoint_tenant_id = string })))
+    default_action             = string
+    bypass                     = optional(string)
+    ip_rules                   = optional(list(string))
+    virtual_network_subnet_ids = optional(list(string))
+    private_link_access        = optional(list(object({ endpoint_resource_id = string, endpoint_tenant_id = optional(string) })))
   })
   default = null
 }
 
 variable "large_file_share_enabled" {
   type    = bool
+  default = false
+}
+
+variable "azure_files_authentication" {
+  type = object({
+    directory_type = string
+    active_directory = optional(object({
+      storage_sid         = string
+      domain_name         = string
+      domain_sid          = string
+      domain_guid         = string
+      forest_name         = string
+      netbios_domain_name = string
+    }))
+  })
   default = null
 }
 
-/* will be added latter
-variable "azure_files_authentication" {  
+variable "routing" {
+  type = object({
+    publish_internet_endpoints  = optional(bool)
+    publish_microsoft_endpoints = optional(bool)
+    choice                      = optional(string)
+  })
+  default = null
 }
 
-variable "routing" {  
-}
-*/
 variable "queue_encryption_key_type" {
   type    = string
   default = "Service"
@@ -178,13 +242,22 @@ variable "infrastructure_encryption_enabled" {
   default = false
 }
 
-/* will be added latter
-variable "immutability_policy" {  
+variable "immutability_policy" {
+  type = object({
+    allow_protected_append_writes = bool
+    state                         = string
+    period_since_creation_in_days = number
+  })
+  default = null
 }
 
 variable "sas_policy" {
+  type = object({
+    expiration_period = string
+    expiration_action = optional(string)
+  })
+  default = null
 }
-*/
 
 variable "allowed_copy_scope" {
   type    = string
@@ -212,11 +285,13 @@ variable "containers" {
 }
 
 variable "azure_ad_groups" {
-  type    = list(string)
-  default = []
+  description = "Grantees Storage Blob Data Contributor on Static Web Blob $Web. Optional"
+  type        = list(string)
+  default     = []
 }
 
 variable "containers_rbac" {
- type = bool
- default = false
+  description = "Grantees Storage Blob Data Contributor on containers created by this module. Optional"
+  type        = bool
+  default     = false
 }

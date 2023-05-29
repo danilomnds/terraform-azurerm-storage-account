@@ -26,8 +26,8 @@ resource "azurerm_storage_account" "sta" {
   dynamic "customer_managed_key" {
     for_each = var.customer_managed_key != null ? [var.customer_managed_key] : []
     content {
-      key_vault_key_id = customer_managed_key.value.key_vault_key_id
-      user_assigned_identity_id = customer_managed_key.value.user_assigned_identity_id      
+      key_vault_key_id          = customer_managed_key.value.key_vault_key_id
+      user_assigned_identity_id = customer_managed_key.value.user_assigned_identity_id
     }
   }
   dynamic "identity" {
@@ -238,7 +238,7 @@ resource "azurerm_role_assignment" "static_web" {
 
 resource "azurerm_storage_container" "ctr" {
   depends_on            = [azurerm_storage_account.sta]
-  for_each              = var.containers != null ? var.containers : {}
+  for_each              = var.container != null ? var.container : {}
   storage_account_name  = azurerm_storage_account.sta.name
   name                  = lookup(each.value, "name", null)
   container_access_type = lookup(each.value, "container_access_type", "private")
@@ -246,7 +246,7 @@ resource "azurerm_storage_container" "ctr" {
 
 resource "azurerm_role_assignment" "ctr" {
   depends_on           = [azurerm_storage_container.ctr]
-  for_each             = (var.containers != null && var.containers_rbac == true) ? var.containers : {}
+  for_each             = (var.container != null && var.container_rbac == true) ? var.container : {}
   scope                = "${azurerm_storage_account.sta.id}/blobServices/default/containers/${lookup(each.value, "name", null)}"
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = lookup(each.value, "ad_group", null)

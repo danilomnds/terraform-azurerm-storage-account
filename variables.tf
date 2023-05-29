@@ -274,13 +274,13 @@ variable "tags" {
   default = {}
 }
 
-variable "containers" {
+variable "container" {
   description = "You can use this var to specify the list of containers to be created"
-  type = map(object({
+  type = object({
     name                  = string
     container_access_type = string
     ad_group              = string
-  }))
+  })
   default = null
 }
 
@@ -290,7 +290,7 @@ variable "azure_ad_groups" {
   default     = []
 }
 
-variable "containers_rbac" {
+variable "container_rbac" {
   description = "Grantees Storage Blob Data Contributor on containers created by this module. Optional"
   type        = bool
   default     = false

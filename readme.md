@@ -93,8 +93,8 @@ output "id" {
 | sftp_enabled | Boolean, enable SFTP for the storage account | `bool` | `False` | No |
 | tags | tags for the resource | `map(string)` | `{}` | No |
 | azure_ad_groups | list of azure AD groups that will be granted the Application Insights Component Contributor role  | `list` | `[]` | No |
-| containers | specifies the list of containers to be created in the storage account | `map(object{})` | `{}` | No |
-| containers_rbac | specifies if the rbac should be applied for the container | `bool` | `false` | No |
+| container | parameters for container creation | `object({})` | `{}` | No |
+| container_rbac | specifies if the rbac should be applied for the container | `bool` | `false` | No |
 
 
 ## Objects and map variables list of acceptable parameters

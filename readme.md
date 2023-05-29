@@ -36,14 +36,11 @@ module "<storage-account-name>" {
     "key1"  = "value1"
     "key2"        = "value2"
   }
-  containers = { 
-    <container-name> = {
+  container = {    
       name                  = "<container-name>",
       container_access_type = "<private>"
-      ad_group              = "<azure group ad>"
-    }
+      ad_group              = "<azure group ad>"    
   }
-  containers_rbac = true  
 }
 output "name" {
   value = module.storage-account-name.name
@@ -94,7 +91,6 @@ output "id" {
 | tags | tags for the resource | `map(string)` | `{}` | No |
 | azure_ad_groups | list of azure AD groups that will be granted the Application Insights Component Contributor role  | `list` | `[]` | No |
 | container | parameters for container creation | `object({})` | `{}` | No |
-| container_rbac | specifies if the rbac should be applied for the container | `bool` | `false` | No |
 
 
 ## Objects and map variables list of acceptable parameters
@@ -171,8 +167,8 @@ output "id" {
 | immutability_policy | period_since_creation_in_days | The immutability period for the blobs in the container since the policy creation, in days | `number` | `null` | No |
 | sas_policy | expiration_period | The SAS expiration period in format of DD.HH:MM:SS | `string` | `null` | `Yes` |
 | sas_policy | expiration_action | The SAS expiration action. The only possible value is Log at this moment | `string` | `Log` | No |
-| containers | name | container name | `string` | `null` | No |
-| containers | container_access_type | blob, private etc | `string` | `null` | No |
+| container | name | container name | `string` | `null` | `Yes` |
+| container | container_access_type | blob, private etc | `string` | `null` | No |
 | containers | ad_group | azure group object id | `string` | `null` | No |
 
 ## Output variables

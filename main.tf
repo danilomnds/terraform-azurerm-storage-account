@@ -237,17 +237,17 @@ resource "azurerm_role_assignment" "static_web" {
 }
 
 resource "azurerm_storage_container" "ctr" {
-  depends_on            = [azurerm_storage_account.sta]
-  for_each              = var.container != null ? var.container : {}
+  depends_on            = [azurerm_storage_account.sta]  
+  count                 = var.container["name"] != null ? 1 : 0
   storage_account_name  = azurerm_storage_account.sta.name
-  name                  = lookup(each.value, "name", null)
-  container_access_type = lookup(each.value, "container_access_type", "private")
+  name                  = var.container["name"]
+  container_access_type = try(var.container["container_access_type"], "private")
 }
 
 resource "azurerm_role_assignment" "ctr" {
-  depends_on           = [azurerm_storage_container.ctr]
-  for_each             = (var.container != null && var.container_rbac == true) ? var.container : {}
-  scope                = "${azurerm_storage_account.sta.id}/blobServices/default/containers/${lookup(each.value, "name", null)}"
+  depends_on           = [azurerm_storage_container.ctr]  
+  count                 = var.container["ad_group"] != null ? 1 : 0
+  scope                = "${azurerm_storage_account.sta.id}/blobServices/default/containers/${var.container["name"]}"
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = lookup(each.value, "ad_group", null)
+  principal_id         = var.container["ad_group"]
 }

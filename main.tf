@@ -236,6 +236,17 @@ resource "azurerm_role_assignment" "static_web" {
   principal_id         = each.value
 }
 
+resource "azurerm_role_assignment" "static_web_reader_data_access_custom" {
+  depends_on = [azurerm_storage_account.sta]
+  for_each = {
+    for k, v in toset(var.azure_ad_groups) : k => v
+    if var.static_website != null
+  }
+  scope                = azurerm_storage_account.sta.id
+  role_definition_name = "Reader and Data Access"
+  principal_id         = each.value
+}
+
 resource "azurerm_storage_container" "ctr" {
   depends_on            = [azurerm_storage_account.sta]  
   count                 = var.container["name"] != null ? 1 : 0
@@ -250,4 +261,12 @@ resource "azurerm_role_assignment" "ctr" {
   scope                = "${azurerm_storage_account.sta.id}/blobServices/default/containers/${var.container["name"]}"
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = var.container["ad_group"]
+}
+
+resource "azurerm_role_assignment" "ctr_reader_data_access_custom" {
+  depends_on           = [azurerm_storage_container.ctr]
+  for_each             = (var.containers != null && var.containers_rbac == true) ? var.containers : {}
+  scope                = azurerm_storage_account.sta.id
+  role_definition_name = "Reader and Data Access"
+  principal_id         = lookup(each.value, "ad_group", null)
 }

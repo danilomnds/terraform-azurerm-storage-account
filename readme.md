@@ -11,7 +11,7 @@ This module can create the rbac for the container used by static web sites ($web
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.4.6            | 3.57.0          |
+| v1.0.0         | v1.6.4            | 3.80.0          |
 
 ## Specifying a version
 
@@ -55,7 +55,7 @@ output "id" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | name | storage account name | `string` | n/a | `Yes` |
-| resource_group_name | resource group where the ACR will be placed | `string` | n/a | `Yes` |
+| resource_group_name | resource group where the resources will be created | `string` | n/a | `Yes` |
 | location | azure region | `string` | n/a | `Yes` |
 | account_kind | defines the kind of account | `string` | `StorageV2` | No |
 | account_tier | defines the tier to use for this storage account | `string` | n/a | `Yes` |
@@ -89,7 +89,7 @@ output "id" {
 | allowed_copy_scope | Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet | `string` | `null` | No |
 | sftp_enabled | Boolean, enable SFTP for the storage account | `bool` | `False` | No |
 | tags | tags for the resource | `map(string)` | `{}` | No |
-| azure_ad_groups | list of azure AD groups that will be granted the Application Insights Component Contributor role  | `list` | `[]` | No |
+| azure_ad_groups | list of azure AD groups that will have access to the resources  | `list` | `[]` | No |
 | container | parameters for container creation | `object({})` | `{}` | No |
 
 

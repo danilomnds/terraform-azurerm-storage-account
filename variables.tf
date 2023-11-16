@@ -60,7 +60,7 @@ variable "shared_access_key_enabled" {
 
 variable "public_network_access_enabled" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "default_to_oauth_authentication" {
@@ -274,13 +274,13 @@ variable "tags" {
   default = {}
 }
 
-variable "container" {
+variable "containers" {
   description = "You can use this var to specify the list of containers to be created"
-  type = object({
+  type = map(object({
     name                  = string
-    container_access_type = optional(string)
-    ad_group              = optional(string)
-  })
+    container_access_type = string
+    ad_group              = string
+  }))
   default = null
 }
 
@@ -288,4 +288,10 @@ variable "azure_ad_groups" {
   description = "Grantees Storage Blob Data Contributor on Static Web Blob $Web. Optional"
   type        = list(string)
   default     = []
+}
+
+variable "containers_rbac" {
+  description = "Grantees Storage Blob Data Contributor on containers created by this module. Optional"
+  type        = bool
+  default     = false
 }

@@ -41,7 +41,7 @@ resource "azurerm_storage_account" "sta" {
     for_each = var.blob_properties != null ? [var.blob_properties] : []
     content {
       dynamic "cors_rule" {
-        for_each = blob_properties.value.cors_rule
+        for_each = blob_properties.value.cors_rule != null ? [blob_properties.value.cors_rule] : []
         content {
           allowed_headers    = cors_rule.value.allowed_headers
           allowed_methods    = cors_rule.value.allowed_methods
@@ -51,13 +51,13 @@ resource "azurerm_storage_account" "sta" {
         }
       }
       dynamic "delete_retention_policy" {
-        for_each = blob_properties.value.delete_retention_policy
+        for_each = blob_properties.value.delete_retention_policy != null ? [blob_properties.value.delete_retention_policy] : []
         content {
           days = delete_retention_policy.value.days
         }
       }
       dynamic "restore_policy" {
-        for_each = blob_properties.value.restore_policy
+        for_each = blob_properties.value.restore_policy != null ? [blob_properties.value.restore_policy] : []
         content {
           days = restore_policy.value.days
         }
@@ -68,7 +68,7 @@ resource "azurerm_storage_account" "sta" {
       default_service_version       = lookup(blob_properties.value, "default_service_version", null)
       last_access_time_enabled      = lookup(blob_properties.value, "last_access_time_enabled", null)
       dynamic "container_delete_retention_policy" {
-        for_each = blob_properties.value.container_delete_retention_policy
+        for_each = blob_properties.value.container_delete_retention_policy != null ? [blob_properties.value.container_delete_retention_policy] : []
         content {
           days = container_delete_retention_policy.value.days
         }
@@ -79,7 +79,7 @@ resource "azurerm_storage_account" "sta" {
     for_each = var.queue_properties != null ? [var.queue_properties] : []
     content {
       dynamic "cors_rule" {
-        for_each = queue_properties.value.cors_rule
+        for_each = queue_properties.value.cors_rule != null ? [queue_properties.value.cors_rule] : []
         content {
           allowed_headers    = cors_rule.value.allowed_headers
           allowed_methods    = cors_rule.value.allowed_methods
@@ -89,7 +89,7 @@ resource "azurerm_storage_account" "sta" {
         }
       }
       dynamic "logging" {
-        for_each = queue_properties.value.logging
+        for_each = queue_properties.value.logging != null ? [queue_properties.value.logging] : []
         content {
           delete                = logging.value.delete
           read                  = logging.value.read
@@ -99,7 +99,7 @@ resource "azurerm_storage_account" "sta" {
         }
       }
       dynamic "minute_metrics" {
-        for_each = queue_properties.value.minute_metrics
+        for_each = queue_properties.value.minute_metrics != null ? [queue_properties.value.minute_metrics] : []
         content {
           enabled               = minute_metrics.value.enabled
           version               = minute_metrics.value.version
@@ -108,7 +108,7 @@ resource "azurerm_storage_account" "sta" {
         }
       }
       dynamic "hour_metrics" {
-        for_each = queue_properties.value.hour_metrics
+        for_each = queue_properties.value.hour_metrics != null ? [queue_properties.value.hour_metrics] : []
         content {
           enabled               = hour_metrics.value.enabled
           version               = hour_metrics.value.version
@@ -129,7 +129,7 @@ resource "azurerm_storage_account" "sta" {
     for_each = var.share_properties != null ? [var.share_properties] : []
     content {
       dynamic "cors_rule" {
-        for_each = share_properties.value.cors_rule
+        for_each = share_properties.value.cors_rule != null ? [share_properties.value.cors_rule] : []
         content {
           allowed_headers    = cors_rule.value.allowed_headers
           allowed_methods    = cors_rule.value.allowed_methods
@@ -139,13 +139,13 @@ resource "azurerm_storage_account" "sta" {
         }
       }
       dynamic "retention_policy" {
-        for_each = share_properties.value.retention_policy
+        for_each = share_properties.value.retention_policy != null ? [share_properties.value.retention_policy] : []
         content {
           days = retention_policy.value.days
         }
       }
       dynamic "smb" {
-        for_each = share_properties.value.smb
+        for_each = share_properties.value.smb != null ? [share_properties.value.smb] : []
         content {
           versions                        = lookup(smb.value, "versions", null)
           authentication_types            = lookup(smb.value, "authentication_types", null)
@@ -164,7 +164,7 @@ resource "azurerm_storage_account" "sta" {
       ip_rules                   = network_rules.value.ip_rules
       virtual_network_subnet_ids = network_rules.value.virtual_network_subnet_ids
       dynamic "private_link_access" {
-        for_each = network_rules.value.private_link_access
+        for_each = network_rules.value.private_link_access != null ? [network_rules.value.private_link_access] : []
         content {
           endpoint_resource_id = private_link_access.value.endpoint_resource_id
           endpoint_tenant_id   = lookup(private_link_access.value, "endpoint_tenant_id", null)
@@ -178,7 +178,7 @@ resource "azurerm_storage_account" "sta" {
     content {
       directory_type = lookup(azure_files_authentication.value, "directory_type", null)
       dynamic "active_directory" {
-        for_each = azure_files_authentication.value.active_directory
+        for_each = azure_files_authentication.value.active_directory != null ? [azure_files_authentication.value.active_directory] : []
         content {
           storage_sid         = azure_files_authentication.value.storage_sid
           domain_name         = azure_files_authentication.value.domain_name

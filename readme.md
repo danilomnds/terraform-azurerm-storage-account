@@ -11,7 +11,7 @@ This module can create the rbac for the container used by static web sites ($web
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.6.4            | 3.80.0          |
+| v1.0.0         | v1.6.6            | 3.86.0          |
 
 ## Specifying a version
 

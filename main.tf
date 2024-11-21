@@ -8,7 +8,7 @@ resource "azurerm_storage_account" "sta" {
   cross_tenant_replication_enabled = var.cross_tenant_replication_enabled
   access_tier                      = var.access_tier
   edge_zone                        = var.edge_zone
-  enable_https_traffic_only        = var.enable_https_traffic_only
+  https_traffic_only_enabled       = var.https_traffic_only_enabled
   min_tls_version                  = var.min_tls_version
   allow_nested_items_to_be_public  = var.allow_nested_items_to_be_public
   shared_access_key_enabled        = var.shared_access_key_enabled
@@ -26,8 +26,9 @@ resource "azurerm_storage_account" "sta" {
   dynamic "customer_managed_key" {
     for_each = var.customer_managed_key != null ? [var.customer_managed_key] : []
     content {
-      key_vault_key_id = customer_managed_key.value.key_vault_key_id
-      user_assigned_identity_id = customer_managed_key.value.user_assigned_identity_id      
+      key_vault_key_id          = lookup(customer_managed_key.value, "key_vault_key_id", null)
+      managed_hsm_key_id        = lookup(customer_managed_key.value, "managed_hsm_key_id", null)
+      user_assigned_identity_id = customer_managed_key.value.user_assigned_identity_id
     }
   }
   dynamic "identity" {
@@ -53,7 +54,8 @@ resource "azurerm_storage_account" "sta" {
       dynamic "delete_retention_policy" {
         for_each = blob_properties.value.delete_retention_policy != null ? [blob_properties.value.delete_retention_policy] : []
         content {
-          days = delete_retention_policy.value.days
+          days                     = delete_retention_policy.value.days
+          permanent_delete_enabled = lookup(delete_retention_policy.value, "permanent_delete_enabled", null)
         }
       }
       dynamic "restore_policy" {
@@ -180,14 +182,16 @@ resource "azurerm_storage_account" "sta" {
       dynamic "active_directory" {
         for_each = azure_files_authentication.value.active_directory != null ? [azure_files_authentication.value.active_directory] : []
         content {
-          storage_sid         = azure_files_authentication.value.storage_sid
-          domain_name         = azure_files_authentication.value.domain_name
-          domain_sid          = azure_files_authentication.value.domain_sid
-          domain_guid         = azure_files_authentication.value.domain_guid
-          forest_name         = azure_files_authentication.value.forest_name
-          netbios_domain_name = azure_files_authentication.value.netbios_domain_name
+
+          domain_name         = active_directory.value.domain_name
+          domain_guid         = active_directory.value.domain_guid
+          domain_sid          = lookup(active_directory.value, "domain_sid", null)
+          storage_sid         = lookup(active_directory.value, "storage_sid", null)
+          forest_name         = lookup(active_directory.value, "forest_name", null)
+          netbios_domain_name = lookup(active_directory.value, "netbios_domain_name", null)
         }
       }
+      default_share_level_permission = lookup(azure_files_authentication.value, "default_share_level_permission", null)
     }
   }
   dynamic "routing" {
@@ -198,7 +202,9 @@ resource "azurerm_storage_account" "sta" {
       choice                      = lookup(routing.value, "choice", "MicrosoftRouting")
     }
   }
-  queue_encryption_key_type         = var.queue_encryption_key_type
+  queue_encryption_key_type = var.queue_encryption_key_type
+  table_encryption_key_type = var.table_encryption_key_type
+
   infrastructure_encryption_enabled = var.infrastructure_encryption_enabled
   dynamic "immutability_policy" {
     for_each = var.immutability_policy != null ? [var.immutability_policy] : []
@@ -217,6 +223,7 @@ resource "azurerm_storage_account" "sta" {
   }
   allowed_copy_scope = var.allowed_copy_scope
   sftp_enabled       = var.sftp_enabled
+  dns_endpoint_type  = var.dns_endpoint_type
   tags               = local.tags
   lifecycle {
     ignore_changes = [
@@ -225,6 +232,45 @@ resource "azurerm_storage_account" "sta" {
   }
 }
 
+# creates containers (blobs)
+resource "azurerm_storage_container" "ctr" {
+  depends_on                        = [azurerm_storage_account.sta]
+  for_each                          = var.containers != null ? { for k, v in var.containers : k => v if v != null } : {}
+  storage_account_id                = azurerm_storage_account.sta.id
+  name                              = lookup(each.value, "name", null)
+  container_access_type             = lookup(each.value, "container_access_type", "private")
+  default_encryption_scope          = lookup(each.value, "default_encryption_scope", null)
+  encryption_scope_override_enabled = lookup(each.value, "encryption_scope_override_enabled", null)
+  metadata                          = lookup(each.value, "metadata", null)
+}
+
+# creates file shares
+resource "azurerm_storage_share" "fileshare" {
+  depends_on         = [azurerm_storage_account.sta]
+  for_each           = var.fileshare != null ? { for k, v in var.fileshare : k => v if v != null } : {}
+  storage_account_id = azurerm_storage_account.sta.id
+  name               = each.value.name
+  access_tier        = lookup(each.value, "access_tier", null)
+  dynamic "acl" {
+    for_each = each.value.acl != null ? [each.value.acl] : []
+    content {
+      id = acl.value.Id
+      dynamic "access_policy" {
+        for_each = acl.value.access_policy != null ? [acl.value.access_policy] : []
+        content {
+          permissions = access_policy.value.permissions
+          start       = lookup(access_policy.value, "start", null)
+          expiry      = lookup(access_policy.value, "expiry", null)
+        }
+      }
+    }
+  }
+  enabled_protocol = lookup(each.value, "enabled_protocol", "SMB")
+  quota            = each.value.quota
+  metadata         = each.value.metadata
+}
+
+# grantees access on static web site blob for an Azure AD group
 resource "azurerm_role_assignment" "static_web" {
   depends_on = [azurerm_storage_account.sta]
   for_each = {
@@ -236,37 +282,23 @@ resource "azurerm_role_assignment" "static_web" {
   principal_id         = each.value
 }
 
+# grantees read access and token generator on the storage account level for an Azure AD group
 resource "azurerm_role_assignment" "static_web_reader_data_access_custom" {
   depends_on = [azurerm_storage_account.sta]
   for_each = {
     for k, v in toset(var.azure_ad_groups) : k => v
-    if var.static_website != null
+    if var.static_website != null || var.containers != null
   }
   scope                = azurerm_storage_account.sta.id
   role_definition_name = "Reader and Data Access Custom"
   principal_id         = each.value
 }
 
-resource "azurerm_storage_container" "ctr" {
-  depends_on            = [azurerm_storage_account.sta]
-  for_each              = var.containers != null ? var.containers : {}
-  storage_account_name  = azurerm_storage_account.sta.name
-  name                  = lookup(each.value, "name", null)
-  container_access_type = lookup(each.value, "container_access_type", "private")
-}
-
+# grantees access on blobs for an Azure AD group
 resource "azurerm_role_assignment" "ctr" {
   depends_on           = [azurerm_storage_container.ctr]
-  for_each             = (var.containers != null && var.containers_rbac == true) ? var.containers : {}
+  for_each             = (var.containers != null && var.containers_rbac == true) ? { for k, v in var.containers : k => v if v != null } : {}
   scope                = "${azurerm_storage_account.sta.id}/blobServices/default/containers/${lookup(each.value, "name", null)}"
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = lookup(each.value, "ad_group", null)
-}
-
-resource "azurerm_role_assignment" "ctr_reader_data_access_custom" {
-  depends_on           = [azurerm_storage_container.ctr]
-  for_each             = (var.containers != null && var.containers_rbac == true) ? var.containers : {}
-  scope                = azurerm_storage_account.sta.id
-  role_definition_name = "Reader and Data Access Custom"
   principal_id         = lookup(each.value, "ad_group", null)
 }

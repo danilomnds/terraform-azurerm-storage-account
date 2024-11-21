@@ -38,7 +38,7 @@ variable "edge_zone" {
   default = null
 }
 
-variable "enable_https_traffic_only" {
+variable "https_traffic_only_enabled" {
   type    = bool
   default = true
 }
@@ -88,8 +88,10 @@ variable "custom_domain" {
 
 variable "customer_managed_key" {
   type = object({
-    key_vault_key_id          = string
+    key_vault_key_id          = optional(string)
+    managed_hsm_key_id        = optional(string)
     user_assigned_identity_id = string
+
   })
   default = null
 }
@@ -111,13 +113,15 @@ variable "blob_properties" {
       exposed_headers    = list(string)
       max_age_in_seconds = number
     }))
-    delete_retention_policy           = optional(object({ days = number }))
+    delete_retention_policy = optional(object({
+      days                     = number
+      permanent_delete_enabled = optional(bool)
+    }))
     restore_policy                    = optional(object({ days = number }))
     versioning_enabled                = optional(bool)
     change_feed_enabled               = optional(bool)
     change_feed_retention_in_days     = optional(number)
     default_service_version           = optional(string)
-    use_subdomain                     = optional(bool)
     last_access_time_enabled          = optional(bool)
     container_delete_retention_policy = optional(object({ days = number }))
   })
@@ -190,7 +194,7 @@ variable "share_properties" {
 variable "network_rules" {
   type = object({
     default_action             = string
-    bypass                     = optional(string)
+    bypass                     = optional(list(string))
     ip_rules                   = optional(list(string))
     virtual_network_subnet_ids = optional(list(string))
     private_link_access        = optional(list(object({ endpoint_resource_id = string, endpoint_tenant_id = optional(string) })))
@@ -207,13 +211,14 @@ variable "azure_files_authentication" {
   type = object({
     directory_type = string
     active_directory = optional(object({
-      storage_sid         = string
       domain_name         = string
-      domain_sid          = string
       domain_guid         = string
-      forest_name         = string
-      netbios_domain_name = string
+      domain_sid          = optional(string)
+      storage_sid         = optional(string)
+      forest_name         = optional(string)
+      netbios_domain_name = optional(string)
     }))
+    default_share_level_permission = optional(string)
   })
   default = null
 }
@@ -269,6 +274,11 @@ variable "sftp_enabled" {
   default = false
 }
 
+variable "dns_endpoint_type" {
+  type    = string
+  default = "Standard"
+}
+
 variable "tags" {
   type    = map(string)
   default = {}
@@ -276,10 +286,13 @@ variable "tags" {
 
 variable "containers" {
   description = "You can use this var to specify the list of containers to be created"
-  type = map(object({
-    name                  = string
-    container_access_type = string
-    ad_group              = string
+  type = list(object({
+    name                              = string
+    container_access_type             = optional(string)
+    ad_group                          = optional(string)
+    default_encryption_scope          = optional(string)
+    encryption_scope_override_enabled = optional(bool)
+    metadata                          = optional(map(string))
   }))
   default = null
 }
@@ -294,4 +307,23 @@ variable "containers_rbac" {
   description = "Grantees Storage Blob Data Contributor on containers created by this module. Optional"
   type        = bool
   default     = false
+}
+
+variable "fileshare" {
+  type = list(object({
+    name        = string
+    access_tier = optional(string)
+    acl = optional(list(object({
+      id = string
+      access_policy = optional(object({
+        permissions = string
+        start       = optional(string)
+        expiry      = optional(string)
+      }))
+    })))
+    enabled_protocol = optional(string)
+    quota            = number
+    metadata         = optional(map(string))
+  }))
+  default = null
 }
